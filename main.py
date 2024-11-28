@@ -9,7 +9,7 @@ from typing import List, Optional
 from git import Repo
 import pinecone
 from sentence_transformers import SentenceTransformer
-from langchain.vectorstores import Pinecone as PineconeVectorStore
+from langchain_community.vectorstores import Pinecone as PineconeVectorStore  # Updated import
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.schema import Document
 import openai
@@ -17,8 +17,11 @@ from dotenv import load_dotenv
 
 import logging
 
+# Initialize logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Load environment variables from .env file if present
 load_dotenv()
 
 app = FastAPI()
