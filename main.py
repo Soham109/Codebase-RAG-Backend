@@ -10,7 +10,7 @@ from git import Repo
 import pinecone
 from sentence_transformers import SentenceTransformer
 from langchain_community.vectorstores import Pinecone as PineconeVectorStore  # Updated import
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.schema import Document
 import openai
 from dotenv import load_dotenv
