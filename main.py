@@ -7,15 +7,14 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
 from git import Repo
-import pinecone
 from sentence_transformers import SentenceTransformer
 from langchain_community.vectorstores import Pinecone as PineconeVectorStore  # Updated import
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings        # Updated import
 from langchain.schema import Document
 import openai
 from dotenv import load_dotenv
-
 import logging
+from pinecone import Pinecone, ServerlessSpec  # New import for Pinecone
 
 # Initialize logging
 logging.basicConfig(level=logging.INFO)
@@ -39,25 +38,37 @@ if not PINECONE_API_KEY or not PINECONE_ENVIRONMENT:
     logger.error("Pinecone API key or environment not set in environment variables.")
     raise ValueError("Pinecone API key or environment not set.")
 
-pinecone.init(api_key=PINECONE_API_KEY, environment=PINECONE_ENVIRONMENT)
+# Create an instance of the Pinecone class
+pinecone_instance = Pinecone(
+    api_key=PINECONE_API_KEY,
+    environment=PINECONE_ENVIRONMENT
+)
 
 # Check if index exists, if not, create it
-if PINECONE_INDEX_NAME not in pinecone.list_indexes():
-    # Assuming the embedding dimension is 768 for 'sentence-transformers/all-mpnet-base-v2'
-    pinecone.create_index(name=PINECONE_INDEX_NAME, dimension=768, metric="cosine")
+if PINECONE_INDEX_NAME not in pinecone_instance.list_indexes().names():
+    pinecone_instance.create_index(
+        name=PINECONE_INDEX_NAME,
+        dimension=768,
+        metric="cosine",
+        spec=ServerlessSpec(
+            cloud='aws',    
+            region='us-east-1'
+        )
+    )
 
-pinecone_index = pinecone.Index(PINECONE_INDEX_NAME)
+# Initialize Pinecone index
+pinecone_index = pinecone_instance.Index(PINECONE_INDEX_NAME)
 
 # Initialize Embeddings
 embedding_model = SentenceTransformer("sentence-transformers/all-mpnet-base-v2")
 hf_embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
 
 # Initialize OpenAI
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-if not GROQ_API_KEY:
-    logger.error("GROQ API key not set in environment variables.")
-    raise ValueError("GROQ API key not set.")
-openai.api_key = GROQ_API_KEY
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")  # Assuming GROQ_API_KEY was a typo
+if not OPENAI_API_KEY:
+    logger.error("OpenAI API key not set in environment variables.")
+    raise ValueError("OpenAI API key not set.")
+openai.api_key = OPENAI_API_KEY
 
 # Supported extensions and ignored directories
 SUPPORTED_EXTENSIONS = {'.py', '.js', '.tsx', '.jsx', '.ipynb', '.java',
