@@ -16,20 +16,16 @@ from dotenv import load_dotenv
 import logging
 from pinecone import Pinecone, ServerlessSpec  # New import for Pinecone
 
-# Initialize logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Load environment variables from .env file if present
 load_dotenv()
 
 app = FastAPI()
 
-# Define request models
 class QueryRequest(BaseModel):
     query: str
 
-# Initialize Pinecone
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 PINECONE_ENVIRONMENT = os.getenv("PINECONE_ENVIRONMENT")
 PINECONE_INDEX_NAME = "codebase-rag"
@@ -38,7 +34,6 @@ if not PINECONE_API_KEY or not PINECONE_ENVIRONMENT:
     logger.error("Pinecone API key or environment not set in environment variables.")
     raise ValueError("Pinecone API key or environment not set.")
 
-# Create an instance of the Pinecone class
 pinecone_instance = Pinecone(
     api_key=PINECONE_API_KEY,
     environment=PINECONE_ENVIRONMENT
@@ -182,7 +177,6 @@ Answer any questions I have about the codebase, based on the code provided. Alwa
     response = llm_response.choices[0].message.content
     return response 
 
-# Initial setup: Clone repo, process files, and populate Pinecone
 @app.on_event("startup")
 def startup_event():
     logger.info("Starting up and setting up Pinecone index.")
@@ -197,17 +191,14 @@ def startup_event():
         )
         documents.append(doc)
 
-    # Generate embeddings and prepare for upsert
     vectors = []
     for doc in documents:
         embedding = hf_embeddings.embed_query(doc.page_content)
         vectors.append((doc.metadata['source'], embedding, doc.metadata))
 
-    # Upsert vectors to Pinecone
     logger.info(f"Upserting {len(vectors)} vectors to Pinecone.")
     pinecone_index.upsert(vectors=vectors, namespace="https://github.com/CoderAgent/SecureAgent")
 
-    # Cleanup cloned repository to save space
     shutil.rmtree(os.path.dirname(repo_path))
     logger.info("Startup setup completed.")
 
