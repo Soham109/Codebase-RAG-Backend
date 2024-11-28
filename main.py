@@ -11,7 +11,7 @@ from sentence_transformers import SentenceTransformer
 from langchain_community.vectorstores import Pinecone as PineconeVectorStore  # Updated import
 from langchain_community.embeddings import HuggingFaceEmbeddings        # Updated import
 from langchain.schema import Document
-import openai
+from openai import OpenAI
 from dotenv import load_dotenv
 import logging
 from pinecone import Pinecone, ServerlessSpec  # New import for Pinecone
@@ -44,7 +44,7 @@ pinecone_instance = Pinecone(
     environment=PINECONE_ENVIRONMENT
 )
 
-# Check if index exists, if not, create it
+
 if PINECONE_INDEX_NAME not in pinecone_instance.list_indexes().names():
     pinecone_instance.create_index(
         name=PINECONE_INDEX_NAME,
@@ -56,20 +56,16 @@ if PINECONE_INDEX_NAME not in pinecone_instance.list_indexes().names():
         )
     )
 
-# Initialize Pinecone index
+
 pinecone_index = pinecone_instance.Index(PINECONE_INDEX_NAME)
 
-# Initialize Embeddings
 embedding_model = SentenceTransformer("sentence-transformers/all-mpnet-base-v2")
 hf_embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
 
-# Initialize OpenAI
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")  # Assuming GROQ_API_KEY was a typo
-if not OPENAI_API_KEY:
-    logger.error("OpenAI API key not set in environment variables.")
-    raise ValueError("OpenAI API key not set.")
-openai.api_key = OPENAI_API_KEY
-
+client = OpenAI(
+    base_url="https://api.groq.com/openai/v1",
+    api_key=os.getenv("GROQ_API_KEY")
+)
 # Supported extensions and ignored directories
 SUPPORTED_EXTENSIONS = {'.py', '.js', '.tsx', '.jsx', '.ipynb', '.java',
                         '.cpp', '.ts', '.go', '.rs', '.vue', '.swift', '.c', '.h'}
@@ -175,15 +171,16 @@ def perform_rag(query: str) -> str:
 Answer any questions I have about the codebase, based on the code provided. Always consider all of the context provided when forming a response.
 """
 
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",  # Replace with your desired model
+    llm_response = client.chat.completions.create(
+        model="llama-3.1-70b-versatile",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": augmented_query}
         ]
     )
 
-    return response.choices[0].message['content'].strip()
+    response = llm_response.choices[0].message.content
+    return response 
 
 # Initial setup: Clone repo, process files, and populate Pinecone
 @app.on_event("startup")
