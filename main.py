@@ -157,7 +157,7 @@ def perform_rag(query: str) -> str:
     )
 
     # Extract contexts
-    contexts = [item['metadata']['text'] for item in top_matches['matches']]
+    contexts = [item['metadata']['content'] for item in top_matches['matches']]
 
     augmented_query = "<CONTEXT>\n" + "\n\n-------\n\n".join(contexts[:10]) + "\n-------\n</CONTEXT>\n\n\n\nMY QUESTION:\n" + query
 
