@@ -25,6 +25,7 @@ app = FastAPI()
 
 class QueryRequest(BaseModel):
     query: str
+    callback_url: str
 
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 PINECONE_ENVIRONMENT = os.getenv("PINECONE_ENVIRONMENT")
