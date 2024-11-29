@@ -199,16 +199,7 @@ def startup_event():
     shutil.rmtree(os.path.dirname(repo_path))
     logger.info("Startup setup completed.")
 
-# Define the RAG endpoint
-@app.post("/perform_rag")
-async def perform_rag_endpoint(request: QueryRequest):
-    try:
         response = perform_rag(request.query)
-        return {"response": response}
-    except Exception as e:
-        logger.error(f"Error in perform_rag_endpoint: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
 
 def process_rag_task(query: str, callback_url: str, task_id: str):
     """Background task to perform RAG and send the result via webhook."""
