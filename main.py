@@ -12,7 +12,8 @@ from langchain.schema import Document
 from openai import OpenAI
 from dotenv import load_dotenv
 import logging
-from pinecone import Pinecone, ServerlessSpec  # New import for Pinecone
+from pinecone import Pinecone, ServerlessSpec
+import requests 
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -207,3 +208,50 @@ async def perform_rag_endpoint(request: QueryRequest):
     except Exception as e:
         logger.error(f"Error in perform_rag_endpoint: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+def process_rag_task(query: str, callback_url: str, task_id: str):
+    """Background task to perform RAG and send the result via webhook."""
+    try:
+        logger.info(f"Processing RAG task {task_id}")
+        response = perform_rag(query)
+        logger.info(f"RAG task {task_id} completed. Sending webhook.")
+        
+        # Prepare the payload
+        payload = {
+            "task_id": task_id,
+            "response": response
+        }
+        
+        # Send the webhook callback
+        headers = {"Content-Type": "application/json"}
+        webhook_response = requests.post(callback_url, json=payload, headers=headers)
+        
+        if webhook_response.status_code != 200:
+            logger.error(f"Failed to send webhook for task {task_id}. Status code: {webhook_response.status_code}")
+    except Exception as e:
+        logger.error(f"Error processing RAG task {task_id}: {str(e)}")
+
+        payload = {
+            "task_id": task_id,
+            "error": str(e)
+        }
+        try:
+            requests.post(callback_url, json=payload, headers=headers)
+        except Exception as webhook_error:
+            logger.error(f"Failed to send error webhook for task {task_id}: {str(webhook_error)}")
+
+@app.post("/perform_rag")
+async def perform_rag_endpoint(request: QueryRequest, background_tasks: BackgroundTasks):
+    """Endpoint to initiate RAG processing."""
+    try:
+        import uuid
+        task_id = str(uuid.uuid4())
+        
+        background_tasks.add_task(process_rag_task, request.query, request.callback_url, task_id)
+        
+        logger.info(f"RAG task {task_id} initiated.")
+        return {"task_id": task_id, "message": "RAG task initiated. You will receive a callback upon completion."}
+    except Exception as e:
+        logger.error(f"Error initiating RAG task: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to initiate RAG task.")
