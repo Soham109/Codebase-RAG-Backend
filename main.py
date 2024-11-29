@@ -1,5 +1,3 @@
-# main.py
-
 import os
 import tempfile
 import shutil
@@ -68,7 +66,6 @@ SUPPORTED_EXTENSIONS = {'.py', '.js', '.tsx', '.jsx', '.ipynb', '.java',
 IGNORED_DIRS = {'node_modules', 'venv', 'env', 'dist', 'build', '.git',
                '__pycache__', '.next', '.vscode', 'vendor'}
 
-# Define the GitHub repository to clone
 REPO_URL = "https://github.com/CoderAgent/SecureAgent"
 
 def clone_repository(repo_url):
@@ -80,7 +77,7 @@ def clone_repository(repo_url):
     Returns:
         The path to the cloned repository.
     """
-    repo_name = repo_url.rstrip('/').split("/")[-1]  # Extract repository name from URL
+    repo_name = repo_url.rstrip('/').split("/")[-1]  # Extracting repository name from URL
     temp_dir = tempfile.mkdtemp()
     repo_path = os.path.join(temp_dir, repo_name)
     logger.info(f"Cloning repository {repo_url} into {repo_path}")
@@ -126,7 +123,6 @@ def get_main_files_content(repo_path: str):
 
     try:
         for root, dirs, files in os.walk(repo_path):
-            # Modify dirs in-place to skip ignored directories
             dirs[:] = [d for d in dirs if d not in IGNORED_DIRS]
 
             for file in files:
