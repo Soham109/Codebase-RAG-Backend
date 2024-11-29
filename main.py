@@ -199,7 +199,6 @@ def startup_event():
     shutil.rmtree(os.path.dirname(repo_path))
     logger.info("Startup setup completed.")
 
-        response = perform_rag(request.query)
 
 def process_rag_task(query: str, callback_url: str, task_id: str):
     """Background task to perform RAG and send the result via webhook."""
