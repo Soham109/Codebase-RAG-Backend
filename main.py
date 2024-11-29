@@ -1,7 +1,7 @@
 import os
 import tempfile
 import shutil
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 from typing import List, Optional
 from git import Repo
@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 import logging
 from pinecone import Pinecone, ServerlessSpec
 import requests 
+import uuid
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -235,7 +236,6 @@ def process_rag_task(query: str, callback_url: str, task_id: str):
 async def perform_rag_endpoint(request: QueryRequest, background_tasks: BackgroundTasks):
     """Endpoint to initiate RAG processing."""
     try:
-        import uuid
         task_id = str(uuid.uuid4())
         
         background_tasks.add_task(process_rag_task, request.query, request.callback_url, task_id)
